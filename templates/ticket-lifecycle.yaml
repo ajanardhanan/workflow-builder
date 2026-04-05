@@ -1,0 +1,114 @@
+# Ticket Lifecycle Workflow Template
+# This is a reference template for the ticket workflow
+# Future enhancement: Parse this YAML to generate Go workflow code
+
+name: ticket-lifecycle
+description: Complete JIRA-like ticket workflow with email notifications
+version: 1.0.0
+
+input:
+  title:
+    type: string
+    required: true
+    description: Ticket title
+  description:
+    type: string
+    required: true
+    description: Ticket description
+  priority:
+    type: enum
+    required: true
+    values: [LOW, MEDIUM, HIGH, URGENT]
+    default: MEDIUM
+  agentId:
+    type: string
+    required: true
+    description: Agent ID to assign ticket to
+  rating:
+    type: integer
+    required: true
+    min: 1
+    max: 5
+    default: 5
+
+steps:
+  - name: create-ticket
+    activity: CreateTicket
+    input:
+      title: $input.title
+      description: $input.description
+      priority: $input.priority
+    output: ticket
+    on_success:
+      - activity: SendTicketCreatedEmail
+        input:
+          ticketId: $ticket.id
+          title: $ticket.title
+
+  - name: assign-ticket
+    activity: AssignTicket
+    input:
+      ticketId: $ticket.id
+      agentId: $input.agentId
+    output: ticket
+    on_success:
+      - activity: SendTicketAssignedEmail
+        input:
+          ticketId: $ticket.id
+          title: $ticket.title
+          agentId: $ticket.assignedAgentId
+
+  - name: update-ticket
+    activity: UpdateTicket
+    input:
+      ticketId: $ticket.id
+      status: RESOLVED
+    output: ticket
+    on_success:
+      - activity: SendTicketUpdatedEmail
+        input:
+          ticketId: $ticket.id
+          title: $ticket.title
+          status: $ticket.status
+
+  - name: close-ticket
+    activity: CloseTicket
+    input:
+      ticketId: $ticket.id
+    output: ticket
+    on_success:
+      - activity: SendTicketClosedEmail
+        input:
+          ticketId: $ticket.id
+          title: $ticket.title
+
+  - name: rate-ticket
+    activity: RateTicket
+    input:
+      ticketId: $ticket.id
+      score: $input.rating
+    output: rating
+    on_success:
+      - activity: SendTicketRatedEmail
+        input:
+          ticketId: $ticket.id
+          title: $ticket.title
+          score: $rating.score
+
+output:
+  ticketId: $ticket.id
+  status: $ticket.status
+  agentId: $ticket.assignedAgentId
+  rating: $rating.score
+  ratingId: $rating.id
+  workflowStep: RATED
+
+retry_policy:
+  initial_interval: 1s
+  backoff_coefficient: 2.0
+  maximum_interval: 10s
+  maximum_attempts: 3
+
+timeout:
+  activity: 30s
+  workflow: 5m

@@ -1,0 +1,44 @@
+services:
+  postgresql:
+    container_name: temporal-postgresql
+    image: postgres:13
+    environment:
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_USER: temporal
+    ports:
+      - 5432:5432
+    networks:
+      - temporal-network
+
+  temporal:
+    container_name: temporal
+    depends_on:
+      - postgresql
+    environment:
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgresql
+    image: temporalio/auto-setup:1.22.4
+    ports:
+      - 7233:7233
+    networks:
+      - temporal-network
+
+  temporal-ui:
+    container_name: temporal-ui
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    image: temporalio/ui:2.21.3
+    ports:
+      - 8080:8080
+    networks:
+      - temporal-network
+
+networks:
+  temporal-network:
+    driver: bridge
