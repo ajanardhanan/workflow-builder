@@ -23,6 +23,7 @@ func main() {
 	priority := flag.String("priority", "MEDIUM", "Ticket priority (LOW, MEDIUM, HIGH, URGENT)")
 	agentID := flag.String("agent", "", "Agent ID to assign ticket to (required)")
 	rating := flag.Int("rating", 5, "Rating score (1-5)")
+	declarative := flag.Bool("declarative", true, "Use declarative YAML-driven workflow (default: true)")
 	flag.Parse()
 
 	if *agentID == "" {
@@ -50,8 +51,14 @@ func main() {
 	// Generate unique workflow ID
 	workflowID := fmt.Sprintf("ticket-lifecycle-%d", time.Now().Unix())
 
+	workflowType := "Hardcoded"
+	if *declarative {
+		workflowType = "Declarative (YAML-driven)"
+	}
+
 	log.Println("🚀 Starting Ticket Lifecycle Workflow")
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	log.Printf("Workflow Type: %s\n", workflowType)
 	log.Printf("Workflow ID: %s\n", workflowID)
 	log.Printf("Input:\n")
 	inputJSON, _ := json.MarshalIndent(input, "  ", "  ")
@@ -64,7 +71,12 @@ func main() {
 		TaskQueue: TaskQueueName,
 	}
 
-	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, workflows.TicketLifecycleWorkflow, input)
+	var we client.WorkflowRun
+	if *declarative {
+		we, err = c.ExecuteWorkflow(context.Background(), workflowOptions, workflows.TicketLifecycleDeclarativeWorkflow, input)
+	} else {
+		we, err = c.ExecuteWorkflow(context.Background(), workflowOptions, workflows.TicketLifecycleWorkflow, input)
+	}
 	if err != nil {
 		log.Fatalln("Unable to execute workflow:", err)
 	}

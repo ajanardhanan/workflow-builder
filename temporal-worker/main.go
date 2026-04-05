@@ -29,6 +29,7 @@ func main() {
 
 	// Register workflows
 	w.RegisterWorkflow(workflows.TicketLifecycleWorkflow)
+	w.RegisterWorkflow(workflows.TicketLifecycleDeclarativeWorkflow)
 
 	// Register activities
 	ticketActivities := activities.NewTicketActivities()
@@ -49,7 +50,8 @@ func main() {
 	log.Println("🚀 Temporal Worker started")
 	log.Printf("   Task Queue: %s\n", TaskQueueName)
 	log.Println("   Registered Workflows:")
-	log.Println("     - TicketLifecycleWorkflow")
+	log.Println("     - TicketLifecycleWorkflow (hardcoded)")
+	log.Println("     - TicketLifecycleDeclarativeWorkflow (YAML-driven)")
 	log.Println("   Registered Activities:")
 	log.Println("     - CreateTicket, AssignTicket, UpdateTicket, CloseTicket, RateTicket")
 	log.Println("     - SendEmail notifications")

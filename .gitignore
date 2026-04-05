@@ -12,6 +12,7 @@ vendor/
 # Binaries
 temporal-worker/main
 temporal-worker/trigger/trigger
+temporal-worker/worker
 
 # IDE
 .idea/
